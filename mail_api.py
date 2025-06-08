@@ -1,14 +1,15 @@
 from flask import Flask, jsonify
 import json
 import requests
+import os
 
 app = Flask(__name__)
 
 # Microsoft Graph API credentials
 tenant_id = "a188da3d-cf4b-4657-9b77-3da81142fa4d"
 client_id = "94da0819-4aad-4801-bb65-44d844a10aaf"
-import os
-client_secret = os.environ.get("CLIENT_SECRET")scope = "https://graph.microsoft.com/.default"
+client_secret = os.environ.get("CLIENT_SECRET")
+scope = "https://graph.microsoft.com/.default"
 user_email = "jacob@htoperations.dk"
 
 @app.route("/emails", methods=["GET"])
@@ -22,7 +23,6 @@ def get_emails():
 
 @app.route("/refresh", methods=["POST"])
 def refresh_emails():
-    # Hent token
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     token_data = {
         "grant_type": "client_credentials",
@@ -36,7 +36,6 @@ def refresh_emails():
     if not access_token:
         return jsonify({"error": "Kunne ikke hente token", "details": token_r.text}), 500
 
-    # Hent e-mails
     graph_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/mailFolders/inbox/messages?$top=10"
     headers = {
         "Authorization": f"Bearer {access_token}",
@@ -48,8 +47,6 @@ def refresh_emails():
         return jsonify({"error": "Fejl ved hentning af e-mails", "details": emails_r.text}), 500
 
     emails = emails_r.json().get("value", [])
-
-    # Gem i fil
     with open("emails.json", "w", encoding="utf-8") as f:
         json.dump(emails, f, indent=2, ensure_ascii=False)
 
