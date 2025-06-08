@@ -1,7 +1,2 @@
-services:
-  - type: web
-    name: mail-api
-    env: python
-    plan: free
-    buildCommand: ""
-    startCommand: python mail_api.py
+buildCommand: "pip install -r requirements.txt"
+startCommand: "gunicorn mail_api:app"
