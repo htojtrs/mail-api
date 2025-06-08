@@ -1,4 +1,4 @@
-from flask import Flask, jsonify
+from flask import Flask, jsonify, request
 import json
 import requests
 import os
@@ -10,19 +10,25 @@ tenant_id = "a188da3d-cf4b-4657-9b77-3da81142fa4d"
 client_id = "94da0819-4aad-4801-bb65-44d844a10aaf"
 client_secret = os.environ.get("CLIENT_SECRET")
 scope = "https://graph.microsoft.com/.default"
-user_email = "jacob@htoperations.dk"
 
 @app.route("/emails", methods=["GET"])
 def get_emails():
+    user = request.args.get("user", "jacob@htoperations.dk")
+    folder = request.args.get("folder", "inbox")
+    filename = f"emails_{user.replace('@', '_').replace('.', '_')}_{folder}.json"
+
     try:
-        with open("emails.json", "r", encoding="utf-8") as f:
+        with open(filename, "r", encoding="utf-8") as f:
             emails = json.load(f)
         return jsonify(emails)
     except FileNotFoundError:
-        return jsonify({"error": "emails.json not found"}), 404
+        return jsonify({"error": f"{filename} not found"}), 404
 
 @app.route("/refresh", methods=["POST"])
 def refresh_emails():
+    user = request.args.get("user", "jacob@htoperations.dk")
+    folder = request.args.get("folder", "inbox")
+
     token_url = f"https://login.microsoftonline.com/{tenant_id}/oauth2/v2.0/token"
     token_data = {
         "grant_type": "client_credentials",
@@ -36,7 +42,7 @@ def refresh_emails():
     if not access_token:
         return jsonify({"error": "Kunne ikke hente token", "details": token_r.text}), 500
 
-    graph_url = f"https://graph.microsoft.com/v1.0/users/{user_email}/mailFolders/inbox/messages?$top=10"
+    graph_url = f"https://graph.microsoft.com/v1.0/users/{user}/mailFolders/{folder}/messages?$top=10"
     headers = {
         "Authorization": f"Bearer {access_token}",
         "Content-Type": "application/json"
@@ -47,10 +53,11 @@ def refresh_emails():
         return jsonify({"error": "Fejl ved hentning af e-mails", "details": emails_r.text}), 500
 
     emails = emails_r.json().get("value", [])
-    with open("emails.json", "w", encoding="utf-8") as f:
+    filename = f"emails_{user.replace('@', '_').replace('.', '_')}_{folder}.json"
+    with open(filename, "w", encoding="utf-8") as f:
         json.dump(emails, f, indent=2, ensure_ascii=False)
 
-    return jsonify({"message": "E-mails opdateret", "antal": len(emails)})
+    return jsonify({"message": f"E-mails opdateret for {user} / {folder}", "antal": len(emails)})
 
 if __name__ == "__main__":
     app.run(host="0.0.0.0", port=5000)
