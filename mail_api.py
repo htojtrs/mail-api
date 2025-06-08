@@ -7,8 +7,8 @@ app = Flask(__name__)
 # Microsoft Graph API credentials
 tenant_id = "a188da3d-cf4b-4657-9b77-3da81142fa4d"
 client_id = "94da0819-4aad-4801-bb65-44d844a10aaf"
-client_secret = "R.p8Q~sXVSX9bZjBK5IbQIHccZgMVq5Tnw7-0bDZ"
-scope = "https://graph.microsoft.com/.default"
+import os
+client_secret = os.environ.get("CLIENT_SECRET")scope = "https://graph.microsoft.com/.default"
 user_email = "jacob@htoperations.dk"
 
 @app.route("/emails", methods=["GET"])
